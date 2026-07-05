@@ -1,0 +1,1752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>The Household Ledger</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root{
+    --paper:#EFEAD9;
+    --paper-raised:#F7F3E6;
+    --paper-line:#DFD8C2;
+    --ink:#20281F;
+    --ink-soft:#525B4C;
+    --ink-faint:#8A9182;
+    --brass:#A9782E;
+    --brass-deep:#7C591F;
+    --pine:#3E6B4E;
+    --pine-deep:#2A4B36;
+    --rust:#9C3B2A;
+    --rust-deep:#6E2A1E;
+    --hairline: rgba(32,40,31,0.16);
+  }
+
+  *{ box-sizing:border-box; }
+
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+  }
+
+  .wrap{
+    max-width:900px;
+    margin:0 auto;
+    padding:2.5rem 1.5rem 5rem;
+  }
+
+  header.masthead{
+    border-bottom:2px solid var(--ink);
+    padding-bottom:1.25rem;
+    margin-bottom:1.75rem;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:1rem;
+    flex-wrap:wrap;
+  }
+
+  .masthead h1{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:2.1rem;
+    margin:0;
+    letter-spacing:0.01em;
+  }
+
+  .masthead p{
+    margin:0.35rem 0 0;
+    color:var(--ink-soft);
+    font-size:0.95rem;
+    font-style:italic;
+    font-family:'Fraunces', serif;
+  }
+
+  .today-tag{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.75rem;
+    color:var(--ink-faint);
+    text-align:right;
+    line-height:1.5;
+  }
+
+  .stats-row{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:1px;
+    background:var(--hairline);
+    border:1px solid var(--hairline);
+    margin-bottom:2rem;
+  }
+
+  .stat-box{
+    background:var(--paper-raised);
+    padding:0.9rem 1rem;
+  }
+
+  .stat-box .num{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:1.6rem;
+    font-weight:500;
+    color:var(--ink);
+    display:block;
+  }
+
+  .stat-box .num.rust{ color:var(--rust-deep); }
+
+  .stat-box .label{
+    font-size:0.72rem;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--ink-faint);
+  }
+
+  .toolbar{
+    display:flex;
+    gap:0.6rem;
+    margin-bottom:1.1rem;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+
+  .toolbar input[type="text"]{
+    flex:1;
+    min-width:180px;
+    padding:0.55rem 0.75rem;
+    border:1px solid var(--hairline);
+    background:var(--paper-raised);
+    border-radius:2px;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:0.9rem;
+    color:var(--ink);
+  }
+  .toolbar input[type="text"]:focus{ outline:2px solid var(--brass); outline-offset:1px; }
+
+  select{
+    padding:0.55rem 0.65rem;
+    border:1px solid var(--hairline);
+    background:var(--paper-raised);
+    border-radius:2px;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:0.85rem;
+    color:var(--ink);
+  }
+
+  button{
+    font-family:'IBM Plex Sans', sans-serif;
+    cursor:pointer;
+  }
+
+  .btn-primary{
+    background:var(--ink);
+    color:var(--paper-raised);
+    border:1px solid var(--ink);
+    padding:0.6rem 1.1rem;
+    border-radius:2px;
+    font-size:0.85rem;
+    font-weight:500;
+    letter-spacing:0.02em;
+  }
+  .btn-primary:hover{ background:var(--pine-deep); border-color:var(--pine-deep); }
+
+  .btn-ghost{
+    background:transparent;
+    color:var(--ink-soft);
+    border:1px solid var(--hairline);
+    padding:0.6rem 0.9rem;
+    border-radius:2px;
+    font-size:0.85rem;
+  }
+  .btn-ghost:hover{ border-color:var(--ink); color:var(--ink); }
+
+  .category-tabs{
+    display:flex;
+    gap:0.4rem;
+    margin-bottom:1.5rem;
+    flex-wrap:wrap;
+  }
+
+  .cat-tab{
+    background:transparent;
+    border:1px solid var(--hairline);
+    padding:0.35rem 0.75rem;
+    border-radius:20px;
+    font-size:0.78rem;
+    color:var(--ink-soft);
+  }
+  .cat-tab.active{
+    background:var(--ink);
+    color:var(--paper-raised);
+    border-color:var(--ink);
+  }
+
+  .panel{
+    background:var(--paper-raised);
+    border:1px solid var(--hairline);
+    padding:1.25rem 1.4rem;
+    margin-bottom:1.75rem;
+    display:none;
+  }
+  .panel.open{ display:block; }
+
+  .panel h2{
+    font-family:'Fraunces', serif;
+    font-size:1.05rem;
+    font-weight:600;
+    margin:0 0 1rem;
+  }
+
+  .form-grid{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:0.8rem 1rem;
+  }
+
+  .field{ display:flex; flex-direction:column; gap:0.3rem; }
+  .field.full{ grid-column:1 / -1; }
+
+  .field label{
+    font-size:0.72rem;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    color:var(--ink-faint);
+  }
+
+  .field input, .field select, .field textarea{
+    padding:0.5rem 0.6rem;
+    border:1px solid var(--hairline);
+    background:var(--paper);
+    border-radius:2px;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:0.88rem;
+    color:var(--ink);
+  }
+  .field textarea{ resize:vertical; min-height:52px; font-family:'IBM Plex Sans', sans-serif; }
+  .field input:focus, .field select:focus, .field textarea:focus{
+    outline:2px solid var(--brass); outline-offset:1px;
+  }
+
+  .panel-actions{
+    display:flex;
+    gap:0.6rem;
+    justify-content:flex-end;
+    margin-top:1.1rem;
+  }
+
+  .ledger{
+    border-top:2px solid var(--ink);
+  }
+
+  .row{
+    display:grid;
+    grid-template-columns:64px 1fr 120px 130px 92px;
+    gap:0.75rem;
+    align-items:center;
+    padding:0.9rem 0.25rem;
+    border-bottom:1px solid var(--hairline);
+  }
+  .row:hover{ background:var(--paper-raised); }
+
+  .asset-no{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.78rem;
+    color:var(--ink-faint);
+  }
+
+  .item-main .name{
+    font-weight:500;
+    font-size:0.95rem;
+    color:var(--ink);
+  }
+  .item-main .meta{
+    font-size:0.78rem;
+    color:var(--ink-soft);
+    margin-top:0.15rem;
+  }
+  .item-main .meta .cat-chip{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.68rem;
+    letter-spacing:0.03em;
+    text-transform:uppercase;
+    color:var(--pine-deep);
+    margin-right:0.5rem;
+  }
+
+  .col-room{ font-size:0.82rem; color:var(--ink-soft); }
+  .col-price{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.85rem;
+    text-align:right;
+    color:var(--ink);
+  }
+  .col-price-sub{
+    font-size:0.72rem;
+    color:var(--ink-faint);
+    margin-top:0.15rem;
+  }
+
+  .stamp{
+    width:82px;
+    height:82px;
+    border-radius:50%;
+    border:2px solid currentColor;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    transform:rotate(-8deg);
+    font-family:'IBM Plex Mono', monospace;
+    line-height:1.15;
+    position:relative;
+  }
+  .stamp::before{
+    content:"";
+    position:absolute;
+    inset:6px;
+    border:1px solid currentColor;
+    border-radius:50%;
+    opacity:0.55;
+  }
+  .stamp .s-status{
+    font-size:0.62rem;
+    font-weight:500;
+    letter-spacing:0.03em;
+    text-transform:uppercase;
+  }
+  .stamp .s-sub{
+    font-size:0.52rem;
+    letter-spacing:0.02em;
+    text-transform:uppercase;
+    opacity:0.85;
+  }
+  .stamp.active{ color:var(--pine-deep); }
+  .stamp.soon{ color:var(--brass-deep); }
+  .stamp.expired{ color:var(--rust-deep); }
+  .stamp.none{ color:var(--ink-faint); }
+
+  .row-actions{
+    display:flex;
+    justify-content:flex-end;
+    gap:0.4rem;
+  }
+  .icon-btn{
+    background:transparent;
+    border:1px solid transparent;
+    color:var(--ink-faint);
+    font-size:0.78rem;
+    padding:0.25rem 0.4rem;
+    border-radius:2px;
+  }
+  .icon-btn:hover{ color:var(--ink); border-color:var(--hairline); }
+
+  .photo-row{
+    display:flex;
+    align-items:center;
+    gap:0.75rem;
+    flex-wrap:wrap;
+  }
+  .photo-row input[type="file"]{
+    font-size:0.82rem;
+    color:var(--ink-soft);
+    max-width:230px;
+  }
+  .photo-status{
+    font-size:0.78rem;
+    font-style:italic;
+    color:var(--ink-faint);
+  }
+  .attachment-grid{
+    display:flex;
+    flex-wrap:wrap;
+    gap:0.5rem;
+    margin-top:0.6rem;
+  }
+  .attachment-chip{
+    position:relative;
+    width:70px;
+    height:70px;
+  }
+  .attachment-chip img{
+    width:70px;
+    height:70px;
+    object-fit:cover;
+    border-radius:3px;
+    border:1px solid var(--hairline);
+    display:block;
+  }
+  .attachment-chip .file-icon{
+    width:70px;
+    height:70px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:4px;
+    border:1px solid var(--hairline);
+    border-radius:3px;
+    background:var(--paper);
+    font-size:0.62rem;
+    color:var(--ink-soft);
+    overflow:hidden;
+    font-family:'IBM Plex Mono', monospace;
+  }
+  .attachment-chip .remove-chip{
+    position:absolute;
+    top:-7px;
+    right:-7px;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:var(--ink);
+    color:var(--paper-raised);
+    border:none;
+    font-size:0.68rem;
+    line-height:18px;
+    text-align:center;
+    padding:0;
+    cursor:pointer;
+  }
+  .row-photo{
+    width:44px;
+    height:44px;
+    border-radius:3px;
+    object-fit:cover;
+    border:1px solid var(--hairline);
+    flex-shrink:0;
+    position:relative;
+  }
+  .row-photo-wrap{
+    position:relative;
+    flex-shrink:0;
+  }
+  .row-photo-count{
+    position:absolute;
+    bottom:-4px;
+    right:-4px;
+    background:var(--ink);
+    color:var(--paper-raised);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.6rem;
+    padding:1px 4px;
+    border-radius:8px;
+    line-height:1.2;
+  }
+  .item-main{
+    display:flex;
+    align-items:center;
+    gap:0.65rem;
+  }
+  .detail-gallery{
+    display:flex;
+    flex-wrap:wrap;
+    gap:0.4rem;
+    margin-top:0.4rem;
+  }
+  .detail-gallery img{
+    width:64px;
+    height:64px;
+    object-fit:cover;
+    border-radius:3px;
+    border:1px solid var(--hairline);
+    cursor:pointer;
+  }
+  .detail-gallery .file-chip{
+    display:flex;
+    align-items:center;
+    gap:0.3rem;
+    font-size:0.75rem;
+    padding:0.35rem 0.55rem;
+    border:1px solid var(--hairline);
+    border-radius:3px;
+    color:var(--ink-soft);
+    text-decoration:none;
+  }
+  .detail-gallery .file-chip:hover{ border-color:var(--ink); color:var(--ink); }
+
+  .reference-photo{
+    margin-top:0.7rem;
+    padding-top:0.6rem;
+    border-top:1px dashed var(--hairline);
+    display:flex;
+    align-items:center;
+    gap:0.65rem;
+  }
+  .reference-photo img{
+    width:70px;
+    height:70px;
+    object-fit:cover;
+    border-radius:3px;
+    border:1px dashed var(--brass-deep);
+  }
+  .reference-photo-caption{
+    font-size:0.75rem;
+    color:var(--ink-faint);
+  }
+  .reference-photo-caption a{ color:var(--brass-deep); }
+
+  .tint-preview{
+    margin-top:0.6rem;
+    padding:0.6rem 0.7rem;
+    background:var(--paper);
+    border:1px solid var(--hairline);
+    border-radius:2px;
+  }
+  .tint-preview .dtitle{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.68rem;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    color:var(--ink-faint);
+    margin-bottom:0.35rem;
+  }
+  .tint-table{
+    width:100%;
+    border-collapse:collapse;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.8rem;
+  }
+  .tint-table th, .tint-table td{
+    text-align:left;
+    padding:0.2rem 0.5rem 0.2rem 0;
+    color:var(--ink-soft);
+  }
+  .tint-table th{
+    font-size:0.65rem;
+    text-transform:uppercase;
+    letter-spacing:0.03em;
+    color:var(--ink-faint);
+    font-weight:500;
+  }
+  .detail-reference{
+    margin-top:0.5rem;
+    display:flex;
+    align-items:center;
+    gap:0.5rem;
+  }
+  .detail-reference img{
+    width:52px;
+    height:52px;
+    object-fit:cover;
+    border-radius:3px;
+    border:1px dashed var(--brass-deep);
+  }
+  .detail-reference .dtitle{ margin-bottom:0.15rem; }
+
+
+
+  .empty{
+    text-align:center;
+    padding:3rem 1rem;
+    color:var(--ink-faint);
+  }
+  .empty .big{
+    font-family:'Fraunces', serif;
+    font-size:1.3rem;
+    color:var(--ink-soft);
+    margin-bottom:0.4rem;
+  }
+
+  .mode-tabs{
+    display:flex;
+    gap:0.5rem;
+    margin-bottom:1.75rem;
+  }
+  .mode-tab{
+    background:transparent;
+    border:1px solid var(--ink);
+    color:var(--ink-soft);
+    padding:0.5rem 1.1rem;
+    border-radius:2px;
+    font-size:0.85rem;
+    font-weight:500;
+    letter-spacing:0.02em;
+  }
+  .mode-tab.active{
+    background:var(--ink);
+    color:var(--paper-raised);
+  }
+
+  .swatch-chip{
+    width:44px;
+    height:44px;
+    border-radius:3px;
+    border:1px solid var(--hairline);
+    flex-shrink:0;
+  }
+  .paint-main{
+    display:flex;
+    align-items:center;
+    gap:0.65rem;
+  }
+  .type-chip{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.68rem;
+    letter-spacing:0.03em;
+    text-transform:uppercase;
+    color:var(--brass-deep);
+  }
+  .row.paint-row{
+    grid-template-columns:1fr 120px 140px 110px;
+  }
+
+  .expand-detail{
+    grid-column:1 / -1;
+    padding:0 0.25rem 0.9rem;
+    font-size:0.82rem;
+    color:var(--ink-soft);
+    border-bottom:1px solid var(--hairline);
+    margin-top:-0.5rem;
+    display:none;
+  }
+  .expand-detail.open{ display:block; }
+  .expand-detail .dtitle{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.68rem;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    color:var(--ink-faint);
+    margin-bottom:0.2rem;
+  }
+
+  @media (max-width:640px){
+    .row{ grid-template-columns:1fr; }
+    .row.paint-row{ grid-template-columns:1fr; }
+    .stamp{ margin-top:0.5rem; }
+    .form-grid{ grid-template-columns:1fr; }
+    .stats-row{ grid-template-columns:1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div>
+      <h1>The Household Ledger</h1>
+      <p>A record of what you own, and when it's due for renewal.</p>
+    </div>
+    <div class="today-tag" id="todayTag"></div>
+  </header>
+
+  <div class="mode-tabs" id="modeTabs">
+    <button class="mode-tab active" data-mode="items">Items</button>
+    <button class="mode-tab" data-mode="paint">Paint colors</button>
+  </div>
+
+  <div id="itemsSection">
+
+  <div class="stats-row" id="statsRow"></div>
+
+  <div class="toolbar">
+    <input type="text" id="searchInput" placeholder="Search by name, brand, model, serial, or room">
+    <button class="btn-ghost" id="toggleFormBtn">+ New entry</button>
+  </div>
+
+  <div class="category-tabs" id="categoryTabs"></div>
+
+  <div class="panel" id="itemPanel">
+    <h2 id="panelTitle">New entry</h2>
+    <p style="margin:-0.4rem 0 1rem; font-size:0.78rem; color:var(--ink-faint);">Fields follow FEMA's Personal Property (Contents) Worksheet, so this ledger doubles as a head start on an insurance claim.</p>
+    <input type="hidden" id="editId">
+    <div class="form-grid">
+      <div class="field full">
+        <label for="f-photo">Photos & files</label>
+        <div class="photo-row">
+          <input type="file" id="f-photo" accept="image/*,application/pdf" capture="environment" multiple>
+          <span class="photo-status" id="photoStatus">Add one or more photos or receipts. The first photo can auto-fill the details below.</span>
+        </div>
+        <div id="attachmentGrid" class="attachment-grid"></div>
+        <div id="referenceImageWrap" class="reference-photo" style="display:none;">
+          <img id="referenceImagePreview" alt="Reference product photo found on the web">
+          <div class="reference-photo-caption" id="referenceImageCaption"></div>
+        </div>
+      </div>
+      <div class="field full">
+        <label for="f-name">Item</label>
+        <input type="text" id="f-name" placeholder="e.g. Samsung French-door refrigerator">
+      </div>
+      <div class="field">
+        <label for="f-category">Category</label>
+        <select id="f-category">
+          <option>Appliance</option>
+          <option>HVAC</option>
+          <option>Electronics</option>
+          <option>Furniture</option>
+          <option>Plumbing</option>
+          <option>Outdoor</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="f-room">Room / location</label>
+        <select id="f-room">
+          <option value="">Select a room…</option>
+          <option>Living room</option>
+          <option>Kitchen</option>
+          <option>Dining room</option>
+          <option>Primary bedroom</option>
+          <option>Bedroom</option>
+          <option>Primary bathroom</option>
+          <option>Bathroom</option>
+          <option>Hallway</option>
+          <option>Home office</option>
+          <option>Laundry room</option>
+          <option>Garage</option>
+          <option>Basement</option>
+          <option>Attic</option>
+          <option>Outdoor</option>
+          <option value="Other">Other (specify)</option>
+        </select>
+        <input type="text" id="f-room-custom" placeholder="Custom room name" style="display:none; margin-top:0.4rem;">
+      </div>
+      <div class="field">
+        <label for="f-brand">Manufacturer / brand</label>
+        <input type="text" id="f-brand" placeholder="e.g. Samsung">
+      </div>
+      <div class="field">
+        <label for="f-model">Model number</label>
+        <input type="text" id="f-model" placeholder="e.g. RF28R7351SG">
+      </div>
+      <div class="field">
+        <label for="f-serial">Serial number</label>
+        <input type="text" id="f-serial" placeholder="Optional">
+      </div>
+      <div class="field">
+        <label for="f-quantity">Quantity</label>
+        <input type="number" id="f-quantity" placeholder="1" min="1" step="1" value="1">
+      </div>
+      <div class="field">
+        <label for="f-price">Original cost, per item (USD)</label>
+        <input type="number" id="f-price" placeholder="0.00" step="0.01" min="0">
+      </div>
+      <div class="field">
+        <label for="f-replacement">Replacement cost, per item (USD)</label>
+        <input type="number" id="f-replacement" placeholder="0.00" step="0.01" min="0">
+        <button type="button" class="btn-ghost" id="lookupCostBtn" style="margin-top:0.4rem; align-self:flex-start;">Look up current price</button>
+        <span class="photo-status" id="lookupCostStatus"></span>
+      </div>
+      <div class="field">
+        <label for="f-date">Purchase date</label>
+        <input type="date" id="f-date">
+      </div>
+      <div class="field">
+        <label for="f-warranty">Warranty length (months)</label>
+        <input type="number" id="f-warranty" placeholder="0 = none" min="0">
+      </div>
+      <div class="field full">
+        <label for="f-notes">Notes</label>
+        <textarea id="f-notes" placeholder="Repairs, quirks, where the manual lives, etc."></textarea>
+      </div>
+    </div>
+    <div class="panel-actions">
+      <button class="btn-ghost" id="cancelBtn">Cancel</button>
+      <button class="btn-primary" id="saveBtn">Save entry</button>
+    </div>
+  </div>
+
+  <div class="ledger" id="ledger"></div>
+  <div class="empty" id="emptyState" style="display:none;">
+    <div class="big">The ledger is empty.</div>
+    <div>Add your first appliance, HVAC system, or big-ticket item to start tracking warranties.</div>
+  </div>
+
+  </div>
+
+  <div id="paintSection" style="display:none;">
+
+  <div class="stats-row" id="paintStatsRow"></div>
+
+  <div class="toolbar">
+    <input type="text" id="paintSearchInput" placeholder="Search by room, color, or brand">
+    <button class="btn-ghost" id="togglePaintFormBtn">+ New color</button>
+  </div>
+
+  <div class="panel" id="paintPanel">
+    <h2 id="paintPanelTitle">New color</h2>
+    <input type="hidden" id="editPaintId">
+    <div class="form-grid">
+      <div class="field full">
+        <label for="p-room">Room / location</label>
+        <select id="p-room">
+          <option value="">Select a room…</option>
+          <option>Living room</option>
+          <option>Kitchen</option>
+          <option>Dining room</option>
+          <option>Primary bedroom</option>
+          <option>Bedroom</option>
+          <option>Primary bathroom</option>
+          <option>Bathroom</option>
+          <option>Hallway</option>
+          <option>Home office</option>
+          <option>Laundry room</option>
+          <option>Garage</option>
+          <option>Basement</option>
+          <option>Attic</option>
+          <option>Outdoor</option>
+          <option value="Other">Other (specify)</option>
+        </select>
+        <input type="text" id="p-room-custom" placeholder="Custom room name or extra detail, e.g. north wall" style="display:none; margin-top:0.4rem;">
+      </div>
+      <div class="field full">
+        <label for="p-photo">Photos & files</label>
+        <div class="photo-row">
+          <input type="file" id="p-photo" accept="image/*,application/pdf" capture="environment" multiple>
+          <span class="photo-status" id="paintPhotoStatus">Add a photo of the can label, a swatch card, or a receipt.</span>
+        </div>
+        <div id="paintAttachmentGrid" class="attachment-grid"></div>
+        <div id="tintFormulaPreview" class="tint-preview" style="display:none;"></div>
+      </div>
+      <div class="field">
+        <label for="p-color">Color name</label>
+        <input type="text" id="p-color" placeholder="e.g. Alabaster">
+      </div>
+      <div class="field">
+        <label for="p-code">Paint code</label>
+        <input type="text" id="p-code" placeholder="e.g. SW 7008">
+      </div>
+      <div class="field">
+        <label for="p-brand">Brand</label>
+        <input type="text" id="p-brand" placeholder="e.g. Sherwin-Williams">
+      </div>
+      <div class="field">
+        <label for="p-type">Type / finish</label>
+        <select id="p-type">
+          <option>Flat</option>
+          <option>Matte</option>
+          <option>Eggshell</option>
+          <option>Satin</option>
+          <option>Semi-gloss</option>
+          <option>High-gloss</option>
+          <option>Primer</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="p-swatch">Swatch (approximate)</label>
+        <input type="color" id="p-swatch" value="#cbc3ab">
+      </div>
+      <div class="field">
+        <label for="p-date">Date painted</label>
+        <input type="date" id="p-date">
+      </div>
+      <div class="field full">
+        <label for="p-notes">Notes</label>
+        <textarea id="p-notes" placeholder="Can size, where leftover paint is stored, touch-up tips, etc."></textarea>
+      </div>
+    </div>
+    <div class="panel-actions">
+      <button class="btn-ghost" id="cancelPaintBtn">Cancel</button>
+      <button class="btn-primary" id="savePaintBtn">Save color</button>
+    </div>
+  </div>
+
+  <div class="ledger" id="paintLedger"></div>
+  <div class="empty" id="paintEmptyState" style="display:none;">
+    <div class="big">No colors logged yet.</div>
+    <div>Add the paint code for each room so touch-ups are a five-minute job, not a guessing game.</div>
+  </div>
+
+  </div>
+
+</div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'household-items';
+  const PAINT_STORAGE_KEY = 'household-paint';
+  let items = [];
+  let paintItems = [];
+  let activeCategory = 'All';
+  let searchTerm = '';
+  let paintSearchTerm = '';
+  let currentAttachments = [];
+  let currentPaintAttachments = [];
+  let currentTintFormula = [];
+  let currentReferenceImage = null;
+  let currentCostLookup = null;
+  let viewMode = 'items';
+  const categories = ['All','Appliance','HVAC','Electronics','Furniture','Plumbing','Outdoor','Other'];
+  const itemCategories = categories.filter(c => c !== 'All');
+  const ROOM_OPTIONS = ['Living room','Kitchen','Dining room','Primary bedroom','Bedroom','Primary bathroom','Bathroom','Hallway','Home office','Laundry room','Garage','Basement','Attic','Outdoor'];
+
+  const todayTag = document.getElementById('todayTag');
+  const now = new Date();
+  todayTag.textContent = 'Ledger reviewed\n' + now.toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});
+  todayTag.style.whiteSpace = 'pre-line';
+
+  function setRoomField(selectId, customId, value){
+    const select = document.getElementById(selectId);
+    const custom = document.getElementById(customId);
+    if(value && ROOM_OPTIONS.includes(value)){
+      select.value = value;
+      custom.style.display = 'none';
+      custom.value = '';
+    }else if(value){
+      select.value = 'Other';
+      custom.style.display = 'block';
+      custom.value = value;
+    }else{
+      select.value = '';
+      custom.style.display = 'none';
+      custom.value = '';
+    }
+  }
+
+  function getRoomValue(selectId, customId){
+    const select = document.getElementById(selectId);
+    const custom = document.getElementById(customId);
+    if(select.value === 'Other') return custom.value.trim();
+    return select.value;
+  }
+
+  document.getElementById('f-room').addEventListener('change', () => {
+    const custom = document.getElementById('f-room-custom');
+    custom.style.display = document.getElementById('f-room').value === 'Other' ? 'block' : 'none';
+    if(document.getElementById('f-room').value !== 'Other') custom.value = '';
+  });
+
+  document.getElementById('p-room').addEventListener('change', () => {
+    const custom = document.getElementById('p-room-custom');
+    custom.style.display = document.getElementById('p-room').value === 'Other' ? 'block' : 'none';
+    if(document.getElementById('p-room').value !== 'Other') custom.value = '';
+  });
+
+  function fmtMoney(n){
+    if(isNaN(n)) return '—';
+    return '$' + Number(n).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+
+  function warrantyExpiry(item){
+    if(!item.purchaseDate || !item.warrantyMonths) return null;
+    const d = new Date(item.purchaseDate);
+    d.setMonth(d.getMonth() + Number(item.warrantyMonths));
+    return d;
+  }
+
+  function warrantyStatus(item){
+    const exp = warrantyExpiry(item);
+    if(!exp) return {code:'none', label:'No warranty', sub:'on file'};
+    const diffDays = Math.round((exp - now) / (1000*60*60*24));
+    if(diffDays < 0) return {code:'expired', label:'Expired', sub: exp.toLocaleDateString(undefined,{month:'short',year:'numeric'})};
+    if(diffDays <= 90) return {code:'soon', label:'Expires soon', sub: exp.toLocaleDateString(undefined,{month:'short',day:'numeric'})};
+    return {code:'active', label:'Active', sub: 'until ' + exp.toLocaleDateString(undefined,{month:'short',year:'numeric'})};
+  }
+
+  async function load(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      items = raw ? JSON.parse(raw) : [];
+    }catch(e){
+      items = [];
+    }
+    try{
+      const raw = localStorage.getItem(PAINT_STORAGE_KEY);
+      paintItems = raw ? JSON.parse(raw) : [];
+    }catch(e){
+      paintItems = [];
+    }
+    render();
+    renderPaint();
+  }
+
+  async function persist(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    }catch(e){
+      console.error('Could not save the ledger.', e);
+    }
+  }
+
+  async function persistPaint(){
+    try{
+      localStorage.setItem(PAINT_STORAGE_KEY, JSON.stringify(paintItems));
+    }catch(e){
+      console.error('Could not save the paint colors.', e);
+    }
+  }
+
+  function renderStats(){
+    const total = items.length;
+    const totalValue = items.reduce((sum, it) => sum + (Number(it.price) || 0) * (Number(it.quantity) || 1), 0);
+    const totalReplacement = items.reduce((sum, it) => sum + (Number(it.replacementCost) || 0) * (Number(it.quantity) || 1), 0);
+    const soonCount = items.filter(it => warrantyStatus(it).code === 'soon').length;
+    const statsRow = document.getElementById('statsRow');
+    statsRow.innerHTML = `
+      <div class="stat-box">
+        <span class="num">${total}</span>
+        <span class="label">Items catalogued</span>
+      </div>
+      <div class="stat-box">
+        <span class="num">${fmtMoney(totalValue)}</span>
+        <span class="label">Total original cost</span>
+      </div>
+      <div class="stat-box">
+        <span class="num">${fmtMoney(totalReplacement)}</span>
+        <span class="label">Total replacement cost</span>
+      </div>
+      <div class="stat-box">
+        <span class="num${soonCount > 0 ? ' rust' : ''}">${soonCount}</span>
+        <span class="label">Warranties expiring soon</span>
+      </div>
+    `;
+  }
+
+  function renderTabs(){
+    const wrap = document.getElementById('categoryTabs');
+    wrap.innerHTML = '';
+    categories.forEach(cat => {
+      const btn = document.createElement('button');
+      btn.className = 'cat-tab' + (cat === activeCategory ? ' active' : '');
+      btn.textContent = cat;
+      btn.addEventListener('click', () => { activeCategory = cat; render(); });
+      wrap.appendChild(btn);
+    });
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str == null ? '' : String(str);
+    return div.innerHTML;
+  }
+
+  function getAttachments(item){
+    if(item.attachments && item.attachments.length) return item.attachments;
+    if(item.photo) return [{ id: 'legacy-' + item.id, name: 'photo', isImage: true, dataUrl: item.photo, mimeType: 'image/jpeg' }];
+    return [];
+  }
+
+  function renderLedger(){
+    const ledger = document.getElementById('ledger');
+    const emptyState = document.getElementById('emptyState');
+    let filtered = items.filter(it => activeCategory === 'All' || it.category === activeCategory);
+    if(searchTerm){
+      const t = searchTerm.toLowerCase();
+      filtered = filtered.filter(it =>
+        (it.name||'').toLowerCase().includes(t) ||
+        (it.brand||'').toLowerCase().includes(t) ||
+        (it.model||'').toLowerCase().includes(t) ||
+        (it.serial||'').toLowerCase().includes(t) ||
+        (it.room||'').toLowerCase().includes(t)
+      );
+    }
+    filtered.sort((a,b) => (a.assetNo||0) - (b.assetNo||0));
+
+    ledger.innerHTML = '';
+    if(filtered.length === 0){
+      emptyState.style.display = 'block';
+      return;
+    }
+    emptyState.style.display = 'none';
+
+    filtered.forEach(item => {
+      const status = warrantyStatus(item);
+      const row = document.createElement('div');
+      row.className = 'row';
+      const brandModel = [item.brand, item.model].filter(Boolean).join(' · ');
+      const qty = Number(item.quantity) || 1;
+      const attachments = getAttachments(item);
+      const primaryImage = attachments.find(a => a.isImage);
+      row.innerHTML = `
+        <div class="asset-no">No. ${String(item.assetNo).padStart(3,'0')}</div>
+        <div class="item-main">
+          ${primaryImage ? `<div class="row-photo-wrap"><img class="row-photo" src="${primaryImage.dataUrl}" alt="">${attachments.length > 1 ? `<span class="row-photo-count">+${attachments.length - 1}</span>` : ''}</div>` : ''}
+          <div>
+            <div class="name">${escapeHtml(item.name)}${qty > 1 ? ` <span class="type-chip">×${qty}</span>` : ''}</div>
+            <div class="meta"><span class="cat-chip">${escapeHtml(item.category)}</span>${escapeHtml(brandModel)}</div>
+          </div>
+        </div>
+        <div class="col-room">${escapeHtml(item.room || '—')}</div>
+        <div class="col-price">
+          ${fmtMoney(item.price)}
+          ${item.replacementCost ? `<div class="col-price-sub">↻ ${fmtMoney(item.replacementCost)}</div>` : ''}
+        </div>
+        <div class="stamp ${status.code}">
+          <span class="s-status">${status.label}</span>
+          <span class="s-sub">${status.sub}</span>
+        </div>
+      `;
+      const detail = document.createElement('div');
+      detail.className = 'row expand-detail';
+      const purchased = item.purchaseDate ? new Date(item.purchaseDate).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}) : '—';
+      const galleryHtml = attachments.length ? `<div class="detail-gallery">${attachments.map(a => a.isImage
+          ? `<img src="${a.dataUrl}" alt="${escapeHtml(a.name || 'photo')}" title="${escapeHtml(a.name || 'photo')}">`
+          : `<a class="file-chip" href="${a.dataUrl}" download="${escapeHtml(a.name || 'file')}">${escapeHtml((a.name || 'file').slice(0,20))}</a>`
+        ).join('')}</div>` : '';
+      const referenceHtml = (item.referenceImage && item.referenceImage.imageUrl) ? `
+        <div class="detail-reference">
+          <img src="${item.referenceImage.imageUrl}" alt="Reference photo from the web" onerror="this.parentElement.style.display='none';">
+          <span style="font-size:0.72rem; color:var(--ink-faint);">Reference photo from the web${item.referenceImage.sourceName ? ' — ' + escapeHtml(item.referenceImage.sourceName) : ''}, not one of your own photos.</span>
+        </div>` : '';
+      detail.innerHTML = `
+        <div>
+          <div class="dtitle">Purchased</div>${purchased}
+          ${galleryHtml}
+          ${referenceHtml}
+        </div>
+        <div>
+          <div class="dtitle">Serial number</div>${escapeHtml(item.serial || '—')}
+          <div class="dtitle" style="margin-top:0.5rem;">Replacement cost</div>${item.replacementCost ? fmtMoney(item.replacementCost) + ' each' + (item.replacementCostSource ? ` (${escapeHtml(item.replacementCostSource)}, ${escapeHtml(item.replacementCostAsOf || '')})` : '') : '—'}
+        </div>
+        <div>
+          <div class="dtitle">Notes</div>${escapeHtml(item.notes || '—')}
+        </div>
+        <div class="row-actions">
+          <button class="icon-btn edit-btn">Edit</button>
+          <button class="icon-btn delete-btn">Delete</button>
+        </div>
+      `;
+      row.style.cursor = 'pointer';
+      row.addEventListener('click', () => {
+        detail.classList.toggle('open');
+      });
+      detail.querySelector('.edit-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        openForm(item);
+      });
+      detail.querySelector('.delete-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        if(confirm(`Remove "${item.name}" from the ledger?`)){
+          items = items.filter(it => it.id !== item.id);
+          persist();
+          render();
+        }
+      });
+      ledger.appendChild(row);
+      ledger.appendChild(detail);
+    });
+  }
+
+  function render(){
+    renderStats();
+    renderTabs();
+    renderLedger();
+  }
+
+  function nextAssetNo(){
+    const nums = items.map(it => it.assetNo || 0);
+    return nums.length ? Math.max(...nums) + 1 : 1;
+  }
+
+  function openForm(item){
+    document.getElementById('itemPanel').classList.add('open');
+    document.getElementById('panelTitle').textContent = item ? 'Edit entry' : 'New entry';
+    document.getElementById('editId').value = item ? item.id : '';
+    document.getElementById('f-name').value = item ? item.name || '' : '';
+    document.getElementById('f-category').value = item ? item.category || 'Appliance' : 'Appliance';
+    setRoomField('f-room', 'f-room-custom', item ? item.room || '' : '');
+    document.getElementById('f-brand').value = item ? item.brand || '' : '';
+    document.getElementById('f-model').value = item ? item.model || '' : '';
+    document.getElementById('f-serial').value = item ? item.serial || '' : '';
+    document.getElementById('f-quantity').value = item ? item.quantity || 1 : 1;
+    document.getElementById('f-price').value = item ? item.price || '' : '';
+    document.getElementById('f-replacement').value = item ? item.replacementCost || '' : '';
+    document.getElementById('f-date').value = item ? item.purchaseDate || '' : '';
+    document.getElementById('f-warranty').value = item ? item.warrantyMonths || '' : '';
+    document.getElementById('f-notes').value = item ? item.notes || '' : '';
+    document.getElementById('f-photo').value = '';
+    const status = document.getElementById('photoStatus');
+    currentAttachments = item && item.attachments ? item.attachments.slice() : (item && item.photo ? [{ id: 'legacy-' + item.id, name: 'photo', isImage: true, dataUrl: item.photo, mimeType: 'image/jpeg' }] : []);
+    renderAttachmentGrid(currentAttachments, 'attachmentGrid');
+    status.textContent = currentAttachments.length
+      ? 'Add more photos or files, or remove any using the × on a thumbnail.'
+      : 'Add one or more photos or receipts. The first photo can auto-fill the details below.';
+    currentReferenceImage = item && item.referenceImage ? item.referenceImage : null;
+    renderReferenceImage();
+    const lookupStatus = document.getElementById('lookupCostStatus');
+    if(item && item.replacementCostSource){
+      currentCostLookup = { source: item.replacementCostSource, asOf: item.replacementCostAsOf, note: item.replacementCostNote };
+      lookupStatus.textContent = `Last looked up ${item.replacementCostAsOf || ''} from ${item.replacementCostSource}.`;
+    }else{
+      currentCostLookup = null;
+      lookupStatus.textContent = '';
+    }
+    document.getElementById('f-name').focus();
+  }
+
+  function resizeImageFile(file, maxDim, quality){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          let width = img.width, height = img.height;
+          if(width > height && width > maxDim){
+            height = Math.round(height * maxDim / width);
+            width = maxDim;
+          }else if(height >= width && height > maxDim){
+            width = Math.round(width * maxDim / height);
+            height = maxDim;
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function extractJsonObject(text){
+    if(!text) throw new Error('Empty response text.');
+    let cleaned = text.trim();
+    cleaned = cleaned.replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
+    try{
+      return JSON.parse(cleaned);
+    }catch(e){
+      const start = cleaned.indexOf('{');
+      const end = cleaned.lastIndexOf('}');
+      if(start !== -1 && end !== -1 && end > start){
+        return JSON.parse(cleaned.slice(start, end + 1));
+      }
+      throw e;
+    }
+  }
+
+  function parseJsonFromTextBlocks(textBlocks){
+    for(let i = textBlocks.length - 1; i >= 0; i--){
+      try{
+        return extractJsonObject(textBlocks[i].text);
+      }catch(e){
+        continue;
+      }
+    }
+    throw new Error('No parseable JSON found in the response.');
+  }
+
+  async function analyzePhoto(dataUrl){
+    const match = dataUrl.match(/^data:(image\/[a-zA-Z]+);base64,(.*)$/);
+    if(!match) return null;
+    const mediaType = match[1];
+    const base64Data = match[2];
+    const response = await fetch('/api/vision-analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind: 'item', mediaType, base64Data, categories: itemCategories })
+    });
+    if(!response.ok){
+      const errBody = await response.json().catch(() => ({}));
+      throw new Error(errBody.error || ('Analysis failed with status ' + response.status));
+    }
+    return await response.json();
+  }
+
+  const PAINT_TYPES = ['Flat','Matte','Eggshell','Satin','Semi-gloss','High-gloss','Primer','Other'];
+
+  async function analyzePaintLabel(dataUrl){
+    const match = dataUrl.match(/^data:(image\/[a-zA-Z]+);base64,(.*)$/);
+    if(!match) return null;
+    const mediaType = match[1];
+    const base64Data = match[2];
+    const response = await fetch('/api/vision-analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind: 'paint', mediaType, base64Data, paintTypes: PAINT_TYPES })
+    });
+    if(!response.ok){
+      const errBody = await response.json().catch(() => ({}));
+      throw new Error(errBody.error || ('Analysis failed with status ' + response.status));
+    }
+    return await response.json();
+  }
+
+  async function lookupReplacementCost(){
+    const name = document.getElementById('f-name').value.trim();
+    const brand = document.getElementById('f-brand').value.trim();
+    const model = document.getElementById('f-model').value.trim();
+    const query = [name, brand, model].filter(Boolean).join(' ');
+    const status = document.getElementById('lookupCostStatus');
+    if(!query){
+      status.textContent = 'Add an item name, brand, or model number first so there is something to search for.';
+      return;
+    }
+    status.textContent = 'Searching current prices…';
+    try{
+      const response = await fetch('/api/web-lookup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: 'price', query })
+      });
+      if(!response.ok){
+        const errBody = await response.json().catch(() => ({}));
+        throw new Error(errBody.error || ('Lookup failed with status ' + response.status));
+      }
+      const result = await response.json();
+      if(!result.estimatedCost){
+        status.textContent = 'Could not find a confident price for that item. You can still enter one manually.';
+        return;
+      }
+      const today = new Date().toISOString().slice(0,10);
+      document.getElementById('f-replacement').value = Number(result.estimatedCost).toFixed(2);
+      currentCostLookup = { source: result.source || 'web search', asOf: today, note: result.note || '' };
+      status.textContent = `≈ $${Number(result.estimatedCost).toFixed(2)} from ${currentCostLookup.source}, found ${today}${result.note ? ' — ' + result.note : ''}. Double-check before relying on this for a claim.`;
+    }catch(err){
+      console.error('Replacement cost lookup failed', err);
+      status.textContent = 'Price lookup failed. You can still enter a replacement cost manually.';
+    }
+  }
+
+  document.getElementById('lookupCostBtn').addEventListener('click', lookupReplacementCost);
+
+  document.getElementById('f-replacement').addEventListener('input', () => {
+    currentCostLookup = null;
+    document.getElementById('lookupCostStatus').textContent = '';
+  });
+
+  function renderReferenceImage(){
+    const wrap = document.getElementById('referenceImageWrap');
+    const img = document.getElementById('referenceImagePreview');
+    const caption = document.getElementById('referenceImageCaption');
+    if(!currentReferenceImage || !currentReferenceImage.imageUrl){
+      wrap.style.display = 'none';
+      img.src = '';
+      return;
+    }
+    img.src = currentReferenceImage.imageUrl;
+    img.onerror = () => { wrap.style.display = 'none'; };
+    caption.innerHTML = `Reference photo from the web${currentReferenceImage.sourceName ? ' — ' + escapeHtml(currentReferenceImage.sourceName) : ''}${currentReferenceImage.sourceUrl ? ` (<a href="${currentReferenceImage.sourceUrl}" target="_blank" rel="noopener">source</a>)` : ''}. Not one of your own photos.`;
+    wrap.style.display = 'flex';
+  }
+
+  async function findReferenceImage(query){
+    try{
+      const response = await fetch('/api/web-lookup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: 'reference-image', query })
+      });
+      if(!response.ok) return;
+      const result = await response.json();
+      if(result.imageUrl){
+        currentReferenceImage = { imageUrl: result.imageUrl, sourceName: result.sourceName || '', sourceUrl: result.sourceUrl || '' };
+        renderReferenceImage();
+      }
+    }catch(err){
+      console.error('Reference image lookup failed', err);
+    }
+  }
+
+  function tintFormulaTableHtml(formula){
+    if(!formula || !formula.length) return '';
+    const rows = formula.map(f => `<tr><td>${escapeHtml(f.colorant || '—')}</td><td>${f.oz != null ? f.oz : '—'}</td><td>${f.parts != null ? f.parts : '—'} / ${f.denominator || '—'}</td></tr>`).join('');
+    return `<table class="tint-table"><thead><tr><th>Colorant</th><th>Oz</th><th>Parts</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  function renderTintFormulaPreview(){
+    const wrap = document.getElementById('tintFormulaPreview');
+    if(!currentTintFormula.length){
+      wrap.style.display = 'none';
+      wrap.innerHTML = '';
+      return;
+    }
+    wrap.innerHTML = `<div class="dtitle">Tint formula found on label</div>${tintFormulaTableHtml(currentTintFormula)}`;
+    wrap.style.display = 'block';
+  }
+
+  function renderAttachmentGrid(list, gridElId){
+    const grid = document.getElementById(gridElId);
+    grid.innerHTML = '';
+    list.forEach((att, idx) => {
+      const chip = document.createElement('div');
+      chip.className = 'attachment-chip';
+      if(att.isImage){
+        chip.innerHTML = `<img src="${att.dataUrl}" alt="${escapeHtml(att.name || 'attachment')}"><button type="button" class="remove-chip" aria-label="Remove ${escapeHtml(att.name || 'photo')}">×</button>`;
+      }else{
+        chip.innerHTML = `<div class="file-icon">${escapeHtml((att.name || 'file').slice(0,18))}</div><button type="button" class="remove-chip" aria-label="Remove ${escapeHtml(att.name || 'file')}">×</button>`;
+      }
+      chip.querySelector('.remove-chip').addEventListener('click', () => {
+        list.splice(idx, 1);
+        renderAttachmentGrid(list, gridElId);
+      });
+      grid.appendChild(chip);
+    });
+  }
+
+  function readFileAsDataUrl(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  document.getElementById('f-photo').addEventListener('change', async (e) => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    if(!files.length) return;
+    const status = document.getElementById('photoStatus');
+    const MAX_FILE_SIZE = 3 * 1024 * 1024;
+    let firstNewImageFile = null;
+    status.textContent = 'Reading files…';
+    for(const file of files){
+      const isImage = file.type.startsWith('image/');
+      try{
+        if(isImage){
+          const thumb = await resizeImageFile(file, 280, 0.7);
+          currentAttachments.push({ id: 'att-' + Date.now() + '-' + Math.random().toString(36).slice(2,7), name: file.name, isImage: true, dataUrl: thumb, mimeType: 'image/jpeg' });
+          if(!firstNewImageFile) firstNewImageFile = file;
+        }else{
+          if(file.size > MAX_FILE_SIZE){
+            status.textContent = `"${file.name}" is too large to store here (over 3MB). Skipped it.`;
+            continue;
+          }
+          const dataUrl = await readFileAsDataUrl(file);
+          currentAttachments.push({ id: 'att-' + Date.now() + '-' + Math.random().toString(36).slice(2,7), name: file.name, isImage: false, dataUrl, mimeType: file.type || 'application/octet-stream' });
+        }
+      }catch(err){
+        console.error('Could not read file', file.name, err);
+      }
+    }
+    renderAttachmentGrid(currentAttachments, 'attachmentGrid');
+    e.target.value = '';
+
+    if(firstNewImageFile){
+      status.textContent = 'Analyzing the first photo…';
+      try{
+        const analysisImage = await resizeImageFile(firstNewImageFile, 1024, 0.85);
+        const info = await analyzePhoto(analysisImage);
+        if(info){
+          if(info.name) document.getElementById('f-name').value = info.name;
+          if(info.category && itemCategories.includes(info.category)) document.getElementById('f-category').value = info.category;
+          if(info.brand) document.getElementById('f-brand').value = info.brand;
+          if(info.model) document.getElementById('f-model').value = info.model;
+          if(info.serial) document.getElementById('f-serial').value = info.serial;
+          if(info.notes) document.getElementById('f-notes').value = info.notes;
+          status.textContent = 'Filled in from the photo. Looking for a reference photo online…';
+          const query = [info.name, info.brand, info.model].filter(Boolean).join(' ');
+          if(query){
+            await findReferenceImage(query);
+          }
+          status.textContent = 'Filled in from the photo — double-check before saving.';
+        }else{
+          status.textContent = 'Files added. Could not read details automatically from the photo — fill in manually.';
+        }
+      }catch(err){
+        console.error('Photo analysis failed', err);
+        status.textContent = 'Files added, but photo analysis failed. You can still fill in the form manually.';
+      }
+    }else{
+      status.textContent = `${currentAttachments.length} file${currentAttachments.length === 1 ? '' : 's'} attached.`;
+    }
+  });
+
+  function closeForm(){
+    document.getElementById('itemPanel').classList.remove('open');
+  }
+
+  document.getElementById('toggleFormBtn').addEventListener('click', () => {
+    const panel = document.getElementById('itemPanel');
+    if(panel.classList.contains('open')){
+      closeForm();
+    }else{
+      openForm(null);
+    }
+  });
+
+  document.getElementById('cancelBtn').addEventListener('click', closeForm);
+
+  document.getElementById('saveBtn').addEventListener('click', () => {
+    const name = document.getElementById('f-name').value.trim();
+    if(!name){
+      alert('Give the item a name before saving.');
+      return;
+    }
+    const editId = document.getElementById('editId').value;
+    const data = {
+      name,
+      category: document.getElementById('f-category').value,
+      room: getRoomValue('f-room', 'f-room-custom'),
+      brand: document.getElementById('f-brand').value.trim(),
+      model: document.getElementById('f-model').value.trim(),
+      serial: document.getElementById('f-serial').value.trim(),
+      quantity: document.getElementById('f-quantity').value ? Number(document.getElementById('f-quantity').value) : 1,
+      price: document.getElementById('f-price').value ? Number(document.getElementById('f-price').value) : null,
+      replacementCost: document.getElementById('f-replacement').value ? Number(document.getElementById('f-replacement').value) : null,
+      replacementCostSource: currentCostLookup ? currentCostLookup.source : null,
+      replacementCostAsOf: currentCostLookup ? currentCostLookup.asOf : null,
+      replacementCostNote: currentCostLookup ? currentCostLookup.note : null,
+      purchaseDate: document.getElementById('f-date').value || null,
+      warrantyMonths: document.getElementById('f-warranty').value ? Number(document.getElementById('f-warranty').value) : 0,
+      notes: document.getElementById('f-notes').value.trim(),
+      attachments: currentAttachments.slice(),
+      referenceImage: currentReferenceImage
+    };
+    if(editId){
+      items = items.map(it => it.id === editId ? Object.assign({}, it, data) : it);
+    }else{
+      data.id = 'item-' + Date.now() + '-' + Math.random().toString(36).slice(2,7);
+      data.assetNo = nextAssetNo();
+      items.push(data);
+    }
+    persist();
+    closeForm();
+    render();
+  });
+
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    searchTerm = e.target.value;
+    render();
+  });
+
+  function renderPaintStats(){
+    const rooms = new Set(paintItems.map(p => (p.room || '').trim().toLowerCase()).filter(Boolean));
+    const statsRow = document.getElementById('paintStatsRow');
+    statsRow.innerHTML = `
+      <div class="stat-box">
+        <span class="num">${paintItems.length}</span>
+        <span class="label">Colors logged</span>
+      </div>
+      <div class="stat-box">
+        <span class="num">${rooms.size}</span>
+        <span class="label">Rooms covered</span>
+      </div>
+      <div class="stat-box">
+        <span class="num">${new Set(paintItems.map(p => p.brand).filter(Boolean)).size}</span>
+        <span class="label">Brands on file</span>
+      </div>
+    `;
+  }
+
+  function renderPaintList(){
+    const ledger = document.getElementById('paintLedger');
+    const emptyState = document.getElementById('paintEmptyState');
+    let filtered = paintItems.slice();
+    if(paintSearchTerm){
+      const t = paintSearchTerm.toLowerCase();
+      filtered = filtered.filter(p =>
+        (p.room||'').toLowerCase().includes(t) ||
+        (p.colorName||'').toLowerCase().includes(t) ||
+        (p.brand||'').toLowerCase().includes(t) ||
+        (p.code||'').toLowerCase().includes(t)
+      );
+    }
+    filtered.sort((a,b) => (a.room||'').localeCompare(b.room||''));
+
+    ledger.innerHTML = '';
+    if(filtered.length === 0){
+      emptyState.style.display = 'block';
+      return;
+    }
+    emptyState.style.display = 'none';
+
+    filtered.forEach(p => {
+      const row = document.createElement('div');
+      row.className = 'row paint-row';
+      const attachments = getAttachments(p);
+      const primaryImage = attachments.find(a => a.isImage);
+      row.innerHTML = `
+        <div class="paint-main">
+          <div class="swatch-chip" style="background:${escapeHtml(p.swatch || '#cbc3ab')};"></div>
+          ${primaryImage ? `<div class="row-photo-wrap"><img class="row-photo" src="${primaryImage.dataUrl}" alt="">${attachments.length > 1 ? `<span class="row-photo-count">+${attachments.length - 1}</span>` : ''}</div>` : ''}
+          <div>
+            <div class="name">${escapeHtml(p.room || 'Unlabeled room')}</div>
+            <div class="meta">${escapeHtml(p.colorName || '—')}</div>
+          </div>
+        </div>
+        <div class="col-room">${escapeHtml(p.code || '—')}</div>
+        <div class="col-room">${escapeHtml(p.brand || '—')}</div>
+        <div class="type-chip">${escapeHtml(p.type || '—')}</div>
+      `;
+      const detail = document.createElement('div');
+      detail.className = 'row expand-detail';
+      const painted = p.datePainted ? new Date(p.datePainted).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}) : '—';
+      const galleryHtml = attachments.length ? `<div class="detail-gallery">${attachments.map(a => a.isImage
+          ? `<img src="${a.dataUrl}" alt="${escapeHtml(a.name || 'photo')}" title="${escapeHtml(a.name || 'photo')}">`
+          : `<a class="file-chip" href="${a.dataUrl}" download="${escapeHtml(a.name || 'file')}">${escapeHtml((a.name || 'file').slice(0,20))}</a>`
+        ).join('')}</div>` : '';
+      detail.innerHTML = `
+        <div>
+          <div class="dtitle">Date painted</div>${painted}
+          ${galleryHtml}
+        </div>
+        <div>
+          <div class="dtitle">Notes</div>${escapeHtml(p.notes || '—')}
+        </div>
+        ${p.tintFormula && p.tintFormula.length ? `<div style="grid-column:1/-1;"><div class="dtitle">Tint formula</div>${tintFormulaTableHtml(p.tintFormula)}</div>` : ''}
+        <div class="row-actions">
+          <button class="icon-btn edit-btn">Edit</button>
+          <button class="icon-btn delete-btn">Delete</button>
+        </div>
+      `;
+      row.style.cursor = 'pointer';
+      row.addEventListener('click', () => {
+        detail.classList.toggle('open');
+      });
+      detail.querySelector('.edit-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        openPaintForm(p);
+      });
+      detail.querySelector('.delete-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        if(confirm(`Remove the color logged for "${p.room || 'this entry'}"?`)){
+          paintItems = paintItems.filter(it => it.id !== p.id);
+          persistPaint();
+          renderPaint();
+        }
+      });
+      ledger.appendChild(row);
+      ledger.appendChild(detail);
+    });
+  }
+
+  function renderPaint(){
+    renderPaintStats();
+    renderPaintList();
+  }
+
+  function openPaintForm(p){
+    document.getElementById('paintPanel').classList.add('open');
+    document.getElementById('paintPanelTitle').textContent = p ? 'Edit color' : 'New color';
+    document.getElementById('editPaintId').value = p ? p.id : '';
+    setRoomField('p-room', 'p-room-custom', p ? p.room || '' : '');
+    document.getElementById('p-color').value = p ? p.colorName || '' : '';
+    document.getElementById('p-code').value = p ? p.code || '' : '';
+    document.getElementById('p-brand').value = p ? p.brand || '' : '';
+    document.getElementById('p-type').value = p ? p.type || 'Flat' : 'Flat';
+    document.getElementById('p-swatch').value = p ? p.swatch || '#cbc3ab' : '#cbc3ab';
+    document.getElementById('p-date').value = p ? p.datePainted || '' : '';
+    document.getElementById('p-notes').value = p ? p.notes || '' : '';
+    document.getElementById('p-photo').value = '';
+    const paintStatus = document.getElementById('paintPhotoStatus');
+    currentPaintAttachments = p && p.attachments ? p.attachments.slice() : [];
+    renderAttachmentGrid(currentPaintAttachments, 'paintAttachmentGrid');
+    paintStatus.textContent = currentPaintAttachments.length
+      ? 'Add more, or remove any using the × on a thumbnail.'
+      : 'Add a photo of the can label, a swatch card, or a receipt.';
+    currentTintFormula = p && p.tintFormula ? p.tintFormula.slice() : [];
+    renderTintFormulaPreview();
+    document.getElementById('p-room').focus();
+  }
+
+  function closePaintForm(){
+    document.getElementById('paintPanel').classList.remove('open');
+  }
+
+  document.getElementById('p-photo').addEventListener('change', async (e) => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    if(!files.length) return;
+    const status = document.getElementById('paintPhotoStatus');
+    const MAX_FILE_SIZE = 3 * 1024 * 1024;
+    let firstNewImageFile = null;
+    status.textContent = 'Reading files…';
+    for(const file of files){
+      const isImage = file.type.startsWith('image/');
+      try{
+        if(isImage){
+          const thumb = await resizeImageFile(file, 280, 0.7);
+          currentPaintAttachments.push({ id: 'patt-' + Date.now() + '-' + Math.random().toString(36).slice(2,7), name: file.name, isImage: true, dataUrl: thumb, mimeType: 'image/jpeg' });
+          if(!firstNewImageFile) firstNewImageFile = file;
+        }else{
+          if(file.size > MAX_FILE_SIZE){
+            status.textContent = `"${file.name}" is too large to store here (over 3MB). Skipped it.`;
+            continue;
+          }
+          const dataUrl = await readFileAsDataUrl(file);
+          currentPaintAttachments.push({ id: 'patt-' + Date.now() + '-' + Math.random().toString(36).slice(2,7), name: file.name, isImage: false, dataUrl, mimeType: file.type || 'application/octet-stream' });
+        }
+      }catch(err){
+        console.error('Could not read file', file.name, err);
+      }
+    }
+    renderAttachmentGrid(currentPaintAttachments, 'paintAttachmentGrid');
+    e.target.value = '';
+
+    if(firstNewImageFile){
+      status.textContent = 'Reading the paint label…';
+      try{
+        const analysisImage = await resizeImageFile(firstNewImageFile, 1024, 0.85);
+        const info = await analyzePaintLabel(analysisImage);
+        if(info){
+          if(info.colorName) document.getElementById('p-color').value = info.colorName;
+          if(info.code) document.getElementById('p-code').value = info.code;
+          if(info.brand) document.getElementById('p-brand').value = info.brand;
+          if(info.type && PAINT_TYPES.includes(info.type)) document.getElementById('p-type').value = info.type;
+          if(info.swatchHex && /^#[0-9a-fA-F]{6}$/.test(info.swatchHex)) document.getElementById('p-swatch').value = info.swatchHex;
+          if(info.notes) document.getElementById('p-notes').value = info.notes;
+          if(Array.isArray(info.tintFormula) && info.tintFormula.length){
+            currentTintFormula = info.tintFormula;
+            renderTintFormulaPreview();
+          }
+          status.textContent = 'Filled in from the label — double-check before saving.';
+        }else{
+          status.textContent = 'Files added. Could not read the label automatically — fill in manually.';
+        }
+      }catch(err){
+        console.error('Paint label analysis failed', err);
+        status.textContent = 'Files added, but label analysis failed. You can still fill in the form manually.';
+      }
+    }else{
+      status.textContent = `${currentPaintAttachments.length} file${currentPaintAttachments.length === 1 ? '' : 's'} attached.`;
+    }
+  });
+
+  document.getElementById('togglePaintFormBtn').addEventListener('click', () => {
+    const panel = document.getElementById('paintPanel');
+    if(panel.classList.contains('open')){
+      closePaintForm();
+    }else{
+      openPaintForm(null);
+    }
+  });
+
+  document.getElementById('cancelPaintBtn').addEventListener('click', closePaintForm);
+
+  document.getElementById('savePaintBtn').addEventListener('click', () => {
+    const room = getRoomValue('p-room', 'p-room-custom');
+    const colorName = document.getElementById('p-color').value.trim();
+    if(!room && !colorName){
+      alert('Add at least a room or a color name before saving.');
+      return;
+    }
+    const editId = document.getElementById('editPaintId').value;
+    const data = {
+      room,
+      colorName,
+      code: document.getElementById('p-code').value.trim(),
+      brand: document.getElementById('p-brand').value.trim(),
+      type: document.getElementById('p-type').value,
+      swatch: document.getElementById('p-swatch').value,
+      datePainted: document.getElementById('p-date').value || null,
+      notes: document.getElementById('p-notes').value.trim(),
+      attachments: currentPaintAttachments.slice(),
+      tintFormula: currentTintFormula.slice()
+    };
+    if(editId){
+      paintItems = paintItems.map(p => p.id === editId ? Object.assign({}, p, data) : p);
+    }else{
+      data.id = 'paint-' + Date.now() + '-' + Math.random().toString(36).slice(2,7);
+      paintItems.push(data);
+    }
+    persistPaint();
+    closePaintForm();
+    renderPaint();
+  });
+
+  document.getElementById('paintSearchInput').addEventListener('input', (e) => {
+    paintSearchTerm = e.target.value;
+    renderPaint();
+  });
+
+  document.getElementById('modeTabs').addEventListener('click', (e) => {
+    const btn = e.target.closest('.mode-tab');
+    if(!btn) return;
+    viewMode = btn.dataset.mode;
+    document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t === btn));
+    document.getElementById('itemsSection').style.display = viewMode === 'items' ? 'block' : 'none';
+    document.getElementById('paintSection').style.display = viewMode === 'paint' ? 'block' : 'none';
+  });
+
+  load();
+})();
+</script>
+
+</body>
+</html>
